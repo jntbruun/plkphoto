@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "portfolio": "Portfolio",
+    "shop": "Shop",
+    "blog": "Blog",
+    "about": "About",
+    "contact": "Contact",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "footer": {
+    "tagline": "Nature photography from Norway and beyond.",
+    "allRights": "All rights reserved.",
+    "followOnInstagram": "Follow on Instagram"
+  },
+  "home": {
+    "heroAlt": "Nature photography by Petter L. Krogstad",
+    "cta": "View portfolio",
+    "intro": "Nature photography that takes its time. From Norwegian mountains to African savanna — stillness, light, and moments that don't repeat.",
+    "collectionsHeading": "Collections",
+    "viewCollection": "View collection"
+  },
+  "portfolio": {
+    "heading": "Portfolio",
+    "collections": {
+      "wildlife": {
+        "name": "Wildlife",
+        "description": "Animals in their natural habitat — from Norwegian forests to African savanna."
+      },
+      "nature": {
+        "name": "Nature",
+        "description": "Landscapes, light and nature without people in the frame."
+      },
+      "other": {
+        "name": "Other",
+        "description": "Images that don't fit neatly into the other categories."
+      }
+    },
+    "imageCount": "{count} images",
+    "backToCollection": "Back to {collection}",
+    "previous": "Previous",
+    "next": "Next",
+    "location": "Location",
+    "date": "Date",
+    "requestPrint": "Request print"
+  },
+  "shop": {
+    "heading": "Prints",
+    "intro": "Selected images available as fine art prints. Printed on archival paper with pigment inks for lasting quality.",
+    "availableSizes": "Available sizes",
+    "requestPrint": "Request print",
+    "requestPrintHint": "Send a request — I'll reply with pricing and lead time.",
+    "processHeading": "About the print process",
+    "processText": "All prints are individually ordered and printed on Hahnemühle Photo Rag 308g. Delivery within 2–3 weeks. Framing service available on request."
+  },
+  "blog": {
+    "heading": "Blog",
+    "readMore": "Read more",
+    "publishedAt": "Published"
+  },
+  "about": {
+    "heading": "About Petter"
+  },
+  "contact": {
+    "heading": "Contact",
+    "intro": "Questions about prints, collaboration, or anything else? Send a message.",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "message": "Message",
+      "reference": "Image reference (optional)"
+    },
+    "submit": "Send message",
+    "sending": "Sending...",
+    "successHeading": "Message sent",
+    "successText": "I usually reply within 1–2 days.",
+    "errorText": "Something went wrong. Try again or send directly to email."
+  },
+  "common": {
+    "skipToContent": "Skip to content",
+    "loading": "Loading...",
+    "plkphoto": "PLKPHOTO",
+    "petterFullName": "Petter L. Krogstad"
+  }
+}

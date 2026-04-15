@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "portfolio": "Portfolio",
+    "shop": "Shop",
+    "blog": "Blogg",
+    "about": "Om Petter",
+    "contact": "Kontakt",
+    "openMenu": "Åpne meny",
+    "closeMenu": "Lukk meny"
+  },
+  "footer": {
+    "tagline": "Naturfotografi fra Norge og verden.",
+    "allRights": "Alle rettigheter forbeholdt.",
+    "followOnInstagram": "Følg på Instagram"
+  },
+  "home": {
+    "heroAlt": "Naturfoto av Petter L. Krogstad",
+    "cta": "Se portfolio",
+    "intro": "Naturfotografi som tar seg tid. Fra fjellet til savannen — stillhet, lys, og øyeblikk som ikke gjentar seg.",
+    "collectionsHeading": "Collections",
+    "viewCollection": "Se collection"
+  },
+  "portfolio": {
+    "heading": "Portfolio",
+    "collections": {
+      "wildlife": {
+        "name": "Wildlife",
+        "description": "Dyr i sin naturlige habitat — fra norsk skog til afrikansk savanne."
+      },
+      "nature": {
+        "name": "Nature",
+        "description": "Landskap, lys og natur uten mennesker i bildet."
+      },
+      "other": {
+        "name": "Other",
+        "description": "Bilder som ikke passer i de andre kategoriene."
+      }
+    },
+    "imageCount": "{count} bilder",
+    "backToCollection": "Tilbake til {collection}",
+    "previous": "Forrige",
+    "next": "Neste",
+    "location": "Sted",
+    "date": "Dato",
+    "requestPrint": "Spør om print"
+  },
+  "shop": {
+    "heading": "Prints",
+    "intro": "Utvalgte bilder tilgjengelige som fine art prints. Trykket på arkivpapir med pigmentblekk for lasting holdbarhet.",
+    "availableSizes": "Tilgjengelige størrelser",
+    "requestPrint": "Spør om print",
+    "requestPrintHint": "Send en forespørsel — jeg svarer med pris og leveringstid.",
+    "processHeading": "Om print-prosessen",
+    "processText": "Alle prints bestilles individuelt og trykkes på Hahnemühle Photo Rag 308g. Levering innen 2–3 uker. Innrammingsservice tilbys på forespørsel."
+  },
+  "blog": {
+    "heading": "Blogg",
+    "readMore": "Les mer",
+    "publishedAt": "Publisert"
+  },
+  "about": {
+    "heading": "Om Petter"
+  },
+  "contact": {
+    "heading": "Kontakt",
+    "intro": "Spørsmål om print, samarbeid eller noe annet? Send en melding.",
+    "fields": {
+      "name": "Navn",
+      "email": "E-post",
+      "message": "Melding",
+      "reference": "Bildereferanse (valgfri)"
+    },
+    "submit": "Send melding",
+    "sending": "Sender...",
+    "successHeading": "Meldingen er sendt",
+    "successText": "Jeg svarer vanligvis innen 1–2 dager.",
+    "errorText": "Noe gikk galt. Prøv igjen eller send direkte til e-post."
+  },
+  "common": {
+    "skipToContent": "Hopp til innhold",
+    "loading": "Laster...",
+    "plkphoto": "PLKPHOTO",
+    "petterFullName": "Petter L. Krogstad"
+  }
+}
