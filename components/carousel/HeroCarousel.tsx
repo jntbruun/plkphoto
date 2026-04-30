@@ -2,33 +2,26 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
-import { useGSAP } from "@gsap/react";
-import { gsap } from "@/lib/gsap";
 import type { PhotoImage, Locale } from "@/types/content";
 import { cn } from "@/lib/utils";
-
-// Register useGSAP with GSAP
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(useGSAP);
-}
 
 interface HeroCarouselProps {
   photos: PhotoImage[];
   locale: Locale;
   cta: string;
   ctaHref: string;
+  showLogo?: boolean;
 }
 
-const AUTO_ADVANCE_MS = 6000;
+const AUTO_ADVANCE_MS = 4500;
 
-export default function HeroCarousel({ photos, locale, cta, ctaHref }: HeroCarouselProps) {
+export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = true }: HeroCarouselProps) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Detect prefers-reduced-motion
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReducedMotion(mq.matches);
@@ -37,27 +30,24 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref }: HeroCarou
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  const goTo = useCallback(
-    (index: number) => {
-      setCurrent(index);
-    },
-    [],
+  const goTo = useCallback((index: number) => setCurrent(index), []);
+  const next = useCallback(
+    () => setCurrent((c) => (c + 1) % photos.length),
+    [photos.length],
+  );
+  const prev = useCallback(
+    () => setCurrent((c) => (c - 1 + photos.length) % photos.length),
+    [photos.length],
   );
 
-  const advance = useCallback(() => {
-    setCurrent((c) => (c + 1) % photos.length);
-  }, [photos.length]);
-
-  // Auto-advance
   useEffect(() => {
     if (paused || reducedMotion || photos.length <= 1) return;
-    timerRef.current = setTimeout(advance, AUTO_ADVANCE_MS);
+    timerRef.current = setTimeout(next, AUTO_ADVANCE_MS);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [current, paused, reducedMotion, advance, photos.length]);
+  }, [current, paused, reducedMotion, next, photos.length]);
 
-  // Touch/swipe
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -69,8 +59,8 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref }: HeroCarou
     const onUp = (e: PointerEvent) => {
       const delta = e.clientX - startX;
       if (Math.abs(delta) < 40) return;
-      if (delta < 0) setCurrent((c) => (c + 1) % photos.length);
-      else setCurrent((c) => (c - 1 + photos.length) % photos.length);
+      if (delta < 0) next();
+      else prev();
     };
 
     el.addEventListener("pointerdown", onDown);
@@ -79,27 +69,29 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref }: HeroCarou
       el.removeEventListener("pointerdown", onDown);
       el.removeEventListener("pointerup", onUp);
     };
-  }, [photos.length]);
+  }, [next, prev]);
 
-  // Keyboard navigation for the carousel
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") setCurrent((c) => (c - 1 + photos.length) % photos.length);
-      if (e.key === "ArrowRight") setCurrent((c) => (c + 1) % photos.length);
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
     };
     el.addEventListener("keydown", onKey);
     return () => el.removeEventListener("keydown", onKey);
-  }, [photos.length]);
+  }, [next, prev]);
 
   const photo = photos[current];
   if (!photo) return null;
 
+  const arrowLabelPrev = locale === "no" ? "Forrige bilde" : "Previous image";
+  const arrowLabelNext = locale === "no" ? "Neste bilde" : "Next image";
+
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-svh min-h-[500px] overflow-hidden bg-[var(--color-fg)]"
+      className="relative w-full h-svh min-h-[600px] overflow-hidden bg-black"
       role="region"
       aria-roledescription="carousel"
       aria-label={locale === "no" ? "Utvalgte bilder" : "Featured images"}
@@ -109,13 +101,12 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref }: HeroCarou
       onBlur={() => setPaused(false)}
       tabIndex={0}
     >
-      {/* Slides — cross-fade by stacking and using key-driven opacity */}
       {photos.map((p, i) => (
         <div
           key={p.slug}
           className={cn(
             "absolute inset-0 transition-opacity",
-            reducedMotion ? "" : "duration-1000",
+            reducedMotion ? "" : "duration-700",
             i === current ? "opacity-100" : "opacity-0",
           )}
           aria-hidden={i !== current}
@@ -133,15 +124,78 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref }: HeroCarou
         </div>
       ))}
 
-      {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/50 pointer-events-none" />
+      {/* Darkening overlay so the white logo reads cleanly */}
+      <div className="absolute inset-0 bg-black/35 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none" />
+
+      {/* Centered white logo */}
+      {showLogo && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-6">
+          <h1
+            className={cn(
+              "font-display font-bold text-white text-center select-none",
+              "tracking-[0.06em] uppercase leading-[0.9]",
+              "drop-shadow-[0_4px_30px_rgba(0,0,0,0.55)]",
+            )}
+            style={{ fontSize: "clamp(3.5rem, 14vw, 14rem)" }}
+          >
+            PLKPHOTO
+          </h1>
+        </div>
+      )}
+
+      {/* Prev / Next arrows */}
+      {photos.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={prev}
+            aria-label={arrowLabelPrev}
+            className="group absolute top-1/2 left-3 md:left-6 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 md:w-14 md:h-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/55 text-white transition-colors"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={next}
+            aria-label={arrowLabelNext}
+            className="group absolute top-1/2 right-3 md:right-6 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 md:w-14 md:h-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/55 text-white transition-colors"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </button>
+        </>
+      )}
 
       {/* Caption — bottom-left */}
-      <div className="absolute bottom-20 left-5 md:left-12 text-white">
+      <div className="absolute bottom-16 left-5 md:left-12 text-white max-w-[80%]">
         <p
           key={`title-${current}`}
           className={cn(
-            "font-display text-sm md:text-base mb-1 opacity-90",
+            "font-display tracking-[0.12em] uppercase text-sm md:text-base mb-1 opacity-90",
             !reducedMotion && "animate-fade-up",
           )}
         >
@@ -150,19 +204,19 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref }: HeroCarou
         <p
           key={`loc-${current}`}
           className={cn(
-            "text-xs md:text-sm opacity-60",
+            "text-xs md:text-sm opacity-70",
             !reducedMotion && "animate-fade-up",
           )}
         >
-          {photo.location[locale]} · {photo.date.slice(0, 4)}
+          {[photo.location[locale], photo.date.slice(0, 4)].filter(Boolean).join(" · ")}
         </p>
       </div>
 
       {/* CTA */}
-      <div className="absolute bottom-10 left-5 md:left-12">
+      <div className="absolute bottom-6 left-5 md:left-12">
         <a
           href={ctaHref}
-          className="inline-block text-white border-b border-white/60 pb-0.5 text-sm hover:opacity-70 transition-opacity"
+          className="font-display tracking-[0.15em] uppercase inline-block text-white border-b border-white/60 pb-0.5 text-xs hover:opacity-70 transition-opacity"
         >
           {cta} →
         </a>
@@ -171,7 +225,7 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref }: HeroCarou
       {/* Dot pagination */}
       {photos.length > 1 && (
         <div
-          className="absolute bottom-10 right-5 md:right-12 flex items-center gap-2"
+          className="absolute bottom-6 right-5 md:right-12 flex items-center gap-2"
           role="tablist"
           aria-label={locale === "no" ? "Velg bilde" : "Select image"}
         >

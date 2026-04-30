@@ -18,7 +18,17 @@
     "cta": "Se portfolio",
     "intro": "Naturfotografi som tar seg tid. Fra fjellet til savannen — stillhet, lys, og øyeblikk som ikke gjentar seg.",
     "collectionsHeading": "Collections",
-    "viewCollection": "Se collection"
+    "viewCollection": "Se collection",
+    "aboutHeading": "Om PLK Photo",
+    "aboutBody": "Petter L. Krogstad fotograferer dyr og natur — fra norske fjell til afrikansk savanne. Hvert bilde er resultat av tålmodighet, stillhet, og lange timer i felt.",
+    "aboutCta": "Mer om Petter",
+    "portfolioHeading": "Portfolio",
+    "printsHeading": "Order prints",
+    "printsBody": "Utvalgte bilder tilgjengelige som fine art prints — på arkivpapir, signert og nummerert. Klar til veggen.",
+    "printsCta": "Se prints",
+    "wallAlt": "Print fra PLK Photo på vegg",
+    "instagramHeading": "På Instagram",
+    "instagramFollow": "Følg @plkphoto"
   },
   "portfolio": {
     "heading": "Portfolio",
@@ -42,6 +52,10 @@
     "next": "Neste",
     "location": "Sted",
     "date": "Dato",
+    "year": "Årstall",
+    "latin": "Latin",
+    "camera": "Kamera",
+    "lens": "Objektiv",
     "requestPrint": "Spør om print"
   },
   "shop": {

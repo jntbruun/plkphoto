@@ -43,20 +43,18 @@ export default async function ImagePage({ params }: PageProps) {
   const collection = getCollection(collectionSlug);
   if (!photo || !collection) notFound();
 
-  // Build prev/next within collection
   const collectionPhotos = getPhotos({ collection: collectionSlug as CollectionId });
   const currentIndex = collectionPhotos.findIndex((p) => p.slug === imageSlug);
   const prevPhoto = currentIndex > 0 ? collectionPhotos[currentIndex - 1] : null;
   const nextPhoto = currentIndex < collectionPhotos.length - 1 ? collectionPhotos[currentIndex + 1] : null;
 
-  const formattedDate = new Date(photo.date).toLocaleDateString(
-    l === "no" ? "nb-NO" : "en-GB",
-    { year: "numeric", month: "long", day: "numeric" },
-  );
+  const year = photo.date.slice(0, 4);
+
+  const otherLang: Locale = l === "no" ? "en" : "no";
+  const otherTitle = photo.title[otherLang];
 
   return (
     <div className="pt-24 md:pt-28 pb-24">
-      {/* Back link */}
       <Container>
         <nav className="flex items-center gap-2 text-sm text-[var(--color-muted)] mb-8" aria-label="Breadcrumb">
           <Link href="/portfolio" className="hover:text-[var(--color-fg)] transition-colors">
@@ -74,8 +72,7 @@ export default async function ImagePage({ params }: PageProps) {
         </nav>
       </Container>
 
-      {/* Full-width image */}
-      <div className="w-full flex justify-center px-4 md:px-8 lg:px-12 mb-8">
+      <div className="w-full flex justify-center px-4 md:px-8 lg:px-12 mb-10">
         <div className="relative w-full max-w-5xl">
           <Image
             src={photo.src}
@@ -92,40 +89,64 @@ export default async function ImagePage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Metadata + navigation */}
       <Container>
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 max-w-5xl mx-auto">
-          {/* Left: title + details */}
-          <div>
-            <h1 className="font-display text-3xl md:text-4xl font-light mb-4">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-12 max-w-5xl mx-auto">
+          <div className="flex-1">
+            <h1 className="font-display text-3xl md:text-4xl font-bold tracking-[0.04em] uppercase mb-1">
               {photo.title[l]}
             </h1>
-            <dl className="flex flex-col gap-2 text-sm text-[var(--color-muted)]">
-              <div className="flex gap-3">
-                <dt>{t("location")}:</dt>
-                <dd className="text-[var(--color-fg)]">{photo.location[l]}</dd>
-              </div>
-              <div className="flex gap-3">
-                <dt>{t("date")}:</dt>
-                <dd className="text-[var(--color-fg)]">{formattedDate}</dd>
-              </div>
+            <p className="text-sm text-[var(--color-muted)] mb-6">
+              {otherTitle}
+              {photo.latinName && (
+                <>
+                  {" · "}
+                  <em className="not-italic italic">{photo.latinName}</em>
+                </>
+              )}
+            </p>
+
+            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+              {photo.latinName && (
+                <>
+                  <dt className="text-[var(--color-muted)]">{t("latin")}</dt>
+                  <dd className="text-[var(--color-fg)] italic">{photo.latinName}</dd>
+                </>
+              )}
+              <dt className="text-[var(--color-muted)]">{t("location")}</dt>
+              <dd className="text-[var(--color-fg)]">{photo.location[l]}</dd>
+
+              <dt className="text-[var(--color-muted)]">{t("year")}</dt>
+              <dd className="text-[var(--color-fg)]">{year}</dd>
+
+              {photo.camera && (
+                <>
+                  <dt className="text-[var(--color-muted)]">{t("camera")}</dt>
+                  <dd className="text-[var(--color-fg)]">{photo.camera}</dd>
+                </>
+              )}
+              {photo.lens && (
+                <>
+                  <dt className="text-[var(--color-muted)]">{t("lens")}</dt>
+                  <dd className="text-[var(--color-fg)]">{photo.lens}</dd>
+                </>
+              )}
             </dl>
+
             {photo.description && (
-              <p className="mt-6 text-sm leading-relaxed max-w-md text-[var(--color-muted)]">
+              <p className="mt-8 text-sm leading-relaxed max-w-md text-[var(--color-muted)]">
                 {photo.description[l]}
               </p>
             )}
             {photo.availableAsPrint && (
               <Link
                 href={`/contact?print=${photo.slug}`}
-                className="inline-block mt-6 text-sm border-b border-[var(--color-fg)] pb-0.5 hover:opacity-60 transition-opacity"
+                className="font-display tracking-[0.15em] uppercase inline-block mt-8 text-xs border-b border-[var(--color-fg)] pb-0.5 hover:opacity-60 transition-opacity"
               >
                 {t("requestPrint")} →
               </Link>
             )}
           </div>
 
-          {/* Right: prev/next */}
           <ImageNavigation
             prevSlug={prevPhoto?.slug ?? null}
             nextSlug={nextPhoto?.slug ?? null}

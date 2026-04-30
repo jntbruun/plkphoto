@@ -1,18 +1,17 @@
 /**
  * images.ts
  *
- * Merges generated image data (dimensions, blur, src) with human metadata
+ * Merges generated image data (dimensions, blur, EXIF) with human metadata
  * into the final PhotoImage[] used throughout the app.
  *
- * In Phase 2: replace this file with a Sanity client fetch.
- * The exported functions stay the same — components won't need to change.
+ * Resolution order for camera/lens/year:
+ *   manual override (images.metadata.ts) → EXIF (images.generated.ts) → undefined
  */
 
 import type { PhotoImage, CollectionId } from "@/types/content";
 import { generatedImages } from "./images.generated";
 import { photoMetadata } from "./images.metadata";
 
-// Merge generated + metadata
 const allImages: PhotoImage[] = photoMetadata.map((meta) => {
   const gen = generatedImages.find((g) => g.slug === meta.slug);
   if (!gen) {
@@ -24,6 +23,9 @@ const allImages: PhotoImage[] = photoMetadata.map((meta) => {
     width: gen.width,
     height: gen.height,
     blurDataURL: gen.blurDataURL,
+    camera: meta.camera ?? gen.camera,
+    lens: meta.lens ?? gen.lens,
+    date: gen.capturedAt ?? meta.date,
   };
 });
 

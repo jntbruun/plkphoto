@@ -18,7 +18,17 @@
     "cta": "View portfolio",
     "intro": "Nature photography that takes its time. From Norwegian mountains to African savanna — stillness, light, and moments that don't repeat.",
     "collectionsHeading": "Collections",
-    "viewCollection": "View collection"
+    "viewCollection": "View collection",
+    "aboutHeading": "About PLK Photo",
+    "aboutBody": "Petter L. Krogstad photographs wildlife and nature — from Norwegian mountains to African savanna. Every image is the product of patience, stillness, and long hours in the field.",
+    "aboutCta": "More about Petter",
+    "portfolioHeading": "Portfolio",
+    "printsHeading": "Order prints",
+    "printsBody": "Selected images available as fine art prints — archival paper, signed and numbered. Ready for the wall.",
+    "printsCta": "Browse prints",
+    "wallAlt": "PLK Photo print on a wall",
+    "instagramHeading": "On Instagram",
+    "instagramFollow": "Follow @plkphoto"
   },
   "portfolio": {
     "heading": "Portfolio",
@@ -42,6 +52,10 @@
     "next": "Next",
     "location": "Location",
     "date": "Date",
+    "year": "Year",
+    "latin": "Latin",
+    "camera": "Camera",
+    "lens": "Lens",
     "requestPrint": "Request print"
   },
   "shop": {

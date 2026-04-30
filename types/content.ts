@@ -12,9 +12,16 @@ export interface Collection {
 
 export interface PhotoImage {
   slug: string;
+  /** Common name in NO/EN — also used as display title */
   title: LocalizedString;
+  /** Latin / scientific name (e.g. "Vulpes vulpes") */
+  latinName?: string;
   location: LocalizedString;
   date: string; // ISO
+  /** Camera body (read from EXIF when available) */
+  camera?: string;
+  /** Lens (read from EXIF when available) */
+  lens?: string;
   collection: CollectionId;
   src: string; // path in /public/images/photos/
   alt: LocalizedString;

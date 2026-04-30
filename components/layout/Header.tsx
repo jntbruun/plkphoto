@@ -18,7 +18,6 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  // Close menu on route change
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
@@ -31,19 +30,25 @@ export default function Header() {
     { href: "/contact", label: t("contact") },
   ] as const;
 
+  const isHome = pathname === "/" || /^\/[a-z]{2}\/?$/.test(pathname);
+
   return (
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        scrolled ? "bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-line)]" : "bg-transparent",
+        scrolled
+          ? "bg-[var(--color-bg)]/90 backdrop-blur-sm border-b border-[var(--color-line)]"
+          : isHome
+            ? "bg-gradient-to-b from-black/60 to-transparent"
+            : "bg-transparent",
       )}
     >
       <div className="mx-auto w-full max-w-7xl px-5 md:px-8 lg:px-12">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
+          {/* Wordmark — small, top-left */}
           <Link
             href="/"
-            className="font-display text-lg font-semibold tracking-tight"
+            className="font-display text-base md:text-lg font-bold tracking-[0.18em] uppercase text-white"
           >
             PLKPHOTO
           </Link>
@@ -55,10 +60,10 @@ export default function Header() {
                 key={href}
                 href={href}
                 className={cn(
-                  "text-sm transition-opacity",
+                  "font-display text-xs tracking-[0.15em] uppercase transition-opacity text-white",
                   pathname.startsWith(href)
                     ? "opacity-100"
-                    : "opacity-50 hover:opacity-100",
+                    : "opacity-70 hover:opacity-100",
                 )}
               >
                 {label}
@@ -69,7 +74,6 @@ export default function Header() {
           <div className="flex items-center gap-4">
             <LocaleSwitcher className="hidden md:flex" />
 
-            {/* Mobile hamburger */}
             <button
               className="md:hidden flex flex-col gap-[5px] p-2 -mr-2"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -78,19 +82,19 @@ export default function Header() {
             >
               <span
                 className={cn(
-                  "block w-5 h-px bg-[var(--color-fg)] transition-all duration-300",
+                  "block w-5 h-px bg-white transition-all duration-300",
                   menuOpen && "translate-y-[6px] rotate-45",
                 )}
               />
               <span
                 className={cn(
-                  "block w-5 h-px bg-[var(--color-fg)] transition-all duration-300",
+                  "block w-5 h-px bg-white transition-all duration-300",
                   menuOpen && "opacity-0",
                 )}
               />
               <span
                 className={cn(
-                  "block w-5 h-px bg-[var(--color-fg)] transition-all duration-300",
+                  "block w-5 h-px bg-white transition-all duration-300",
                   menuOpen && "-translate-y-[6px] -rotate-45",
                 )}
               />
@@ -116,7 +120,7 @@ export default function Header() {
               key={href}
               href={href}
               className={cn(
-                "text-lg",
+                "font-display text-base tracking-[0.15em] uppercase",
                 pathname.startsWith(href) ? "opacity-100" : "opacity-60",
               )}
               tabIndex={menuOpen ? 0 : -1}

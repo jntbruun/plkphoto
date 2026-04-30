@@ -8,8 +8,7 @@ export const collections: Collection[] = [
       no: "Dyr i sin naturlige habitat — fra norsk skog til afrikansk savanne.",
       en: "Animals in their natural habitat — from Norwegian forests to African savanna.",
     },
-    // Uses one of the wildlife images as cover
-    coverImage: "/images/photos/wildlife/scandinavian-red-fox.jpg",
+    coverImage: "/images/photos/wildlife/roe-deer-01.jpg",
     order: 1,
   },
   {
@@ -19,8 +18,7 @@ export const collections: Collection[] = [
       no: "Landskap, lys og natur uten mennesker i bildet.",
       en: "Landscapes, light and nature without people in the frame.",
     },
-    // TODO: Replace with actual Nature cover when Petter provides images
-    coverImage: "/images/photos/wildlife/golden-plover.jpg",
+    coverImage: "/images/photos/wildlife/european-golden-plover-01.jpg",
     order: 2,
   },
   {
@@ -30,8 +28,7 @@ export const collections: Collection[] = [
       no: "Bilder som ikke passer i de andre kategoriene.",
       en: "Images that don't fit neatly into the other categories.",
     },
-    // TODO: Replace with actual Other cover when Petter provides images
-    coverImage: "/images/photos/wildlife/atlantic-puffin.jpg",
+    coverImage: "/images/photos/wildlife/atlantic-puffin-01.jpg",
     order: 3,
   },
 ];

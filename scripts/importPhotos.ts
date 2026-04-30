@@ -1,24 +1,190 @@
 /**
  * importPhotos.ts
  *
- * One-time script to:
- * 1. Read all folders in "Animal photos/" (Wildlife collection source)
- * 2. Copy each image to /public/images/photos/wildlife/[slug].jpg
- * 3. Read dimensions via sharp
- * 4. Generate blur placeholder via plaiceholder
- * 5. Write content/images.generated.ts
+ * Reads ~/Desktop/wildlife-id/work/manifest.csv and ingests every original
+ * photo it points to into the site:
+ *
+ * 1. Copy each original from `originals[0]` to /public/images/photos/wildlife/<slug>.jpg
+ * 2. Read EXIF (camera, lens, capture date) via exifr
+ * 3. Read dimensions + blur placeholder via plaiceholder
+ * 4. Generate human metadata (NO/EN/Latin) using the by-species folder as EN→NO map
+ * 5. Write content/images.generated.ts AND content/images.metadata.ts (full rewrite)
  *
  * Run: npm run import-photos
- * Requires: sharp, plaiceholder, tsx installed
  */
 
 import fs from "fs";
 import path from "path";
+import os from "os";
+import sharp from "sharp";
 import { getPlaiceholder } from "plaiceholder";
+import exifr from "exifr";
 
-const SOURCE_DIR = path.resolve(process.cwd(), "Animal photos");
+// Web display target — long edge in pixels.
+const MAX_LONG_EDGE = 2400;
+const JPEG_QUALITY = 82;
+
+const MANIFEST_PATH = path.join(os.homedir(), "Desktop/wildlife-id/work/manifest.csv");
+const BY_SPECIES_DIR = path.join(os.homedir(), "Desktop/wildlife-id/work/by-species");
 const DEST_DIR = path.resolve(process.cwd(), "public/images/photos/wildlife");
-const OUTPUT_FILE = path.resolve(process.cwd(), "content/images.generated.ts");
+const OUT_GENERATED = path.resolve(process.cwd(), "content/images.generated.ts");
+const OUT_METADATA = path.resolve(process.cwd(), "content/images.metadata.ts");
+
+// ---------- CSV parsing ----------
+
+interface ManifestRow {
+  hash: string;
+  copy: string;
+  originals: string[];
+  common_name: string;
+  scientific_name: string;
+  confidence: "low" | "medium" | "high";
+  notes: string;
+}
+
+function parseCsv(text: string): ManifestRow[] {
+  // Minimal CSV parser supporting quoted fields with embedded commas/quotes/newlines.
+  const rows: string[][] = [];
+  let field = "";
+  let row: string[] = [];
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      row.push(field);
+      field = "";
+    } else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field);
+      rows.push(row);
+      field = "";
+      row = [];
+    } else {
+      field += c;
+    }
+  }
+  if (field.length || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+  const [header, ...body] = rows;
+  if (!header) return [];
+  const idx = (name: string) => header.indexOf(name);
+  return body
+    .filter((r) => r.length >= header.length && r[idx("hash")])
+    .map((r) => ({
+      hash: r[idx("hash")]!,
+      copy: r[idx("copy")]!,
+      originals: r[idx("originals")]!.split(";").map((s) => s.trim()).filter(Boolean),
+      common_name: r[idx("common_name")]!,
+      scientific_name: r[idx("scientific_name")]!,
+      confidence: (r[idx("confidence")] || "medium") as ManifestRow["confidence"],
+      notes: r[idx("notes")] || "",
+    }));
+}
+
+// ---------- EN → NO map ----------
+
+function buildSpeciesMap(): Map<string, string> {
+  const map = new Map<string, string>();
+  if (!fs.existsSync(BY_SPECIES_DIR)) return map;
+  for (const folder of fs.readdirSync(BY_SPECIES_DIR)) {
+    const m = folder.match(/^(.+?) - (.+)$/);
+    if (!m) continue;
+    const [, en, no] = m;
+    map.set(en!.toLowerCase(), no!);
+  }
+  return map;
+}
+
+// Manual additions / overrides for species not in the folder or where the
+// manifest's common_name doesn't match the folder name.
+const MANUAL_NO: Record<string, string> = {
+  "eurasian red squirrel": "ekorn",
+};
+
+function lookupNorwegian(commonName: string, map: Map<string, string>): string {
+  const key = commonName.toLowerCase();
+  return map.get(key) ?? MANUAL_NO[key] ?? commonName;
+}
+
+// ---------- Slug normalization ----------
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[æå]/g, "a")
+    .replace(/ø/g, "o")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+// Group manifest rows under a canonical species slug.
+// Lion + Lioness collapse to "lion". Stoat variants collapse to "stoat".
+function canonicalSpecies(commonName: string, scientific: string): {
+  slugBase: string;
+  enLabel: string;
+  noOverride?: string;
+} {
+  const lc = commonName.toLowerCase();
+  if (lc === "lion" || lc === "lioness") {
+    return { slugBase: "lion", enLabel: "Lion" };
+  }
+  if (lc.startsWith("stoat")) {
+    return { slugBase: "stoat", enLabel: "Stoat" };
+  }
+  if (lc === "eurasian red squirrel") {
+    return { slugBase: "eurasian-red-squirrel", enLabel: "Eurasian Red Squirrel" };
+  }
+  return { slugBase: slugify(commonName), enLabel: commonName };
+}
+
+// ---------- EXIF ----------
+
+function formatCamera(make?: string, model?: string): string | undefined {
+  if (!model) return undefined;
+  if (make && !model.toLowerCase().includes(make.toLowerCase())) {
+    return `${make} ${model}`.trim();
+  }
+  return model.trim();
+}
+
+async function readExif(buffer: Buffer): Promise<{
+  camera?: string;
+  lens?: string;
+  capturedAt?: string;
+}> {
+  try {
+    const data = await exifr.parse(buffer, {
+      pick: ["Make", "Model", "LensModel", "LensMake", "DateTimeOriginal"],
+    });
+    if (!data) return {};
+    return {
+      camera: formatCamera(data.Make, data.Model),
+      lens: formatCamera(data.LensMake, data.LensModel),
+      capturedAt: data.DateTimeOriginal
+        ? new Date(data.DateTimeOriginal).toISOString().slice(0, 10)
+        : undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
+// ---------- Output ----------
 
 interface GeneratedImage {
   slug: string;
@@ -26,55 +192,138 @@ interface GeneratedImage {
   width: number;
   height: number;
   blurDataURL: string;
+  camera?: string;
+  lens?: string;
+  capturedAt?: string;
+}
+
+interface MetadataEntry {
+  slug: string;
+  collection: "wildlife";
+  title: { no: string; en: string };
+  latinName: string;
+  location: { no: string; en: string };
+  date: string;
+  alt: { no: string; en: string };
+  featuredOnHome: boolean;
+  availableAsPrint: boolean;
+  metadataStatus: "placeholder" | "confirmed";
+  confidence: "low" | "medium" | "high";
+}
+
+function jsonString(v: string): string {
+  return JSON.stringify(v);
+}
+
+function escapeForTs(v?: string): string {
+  return v === undefined ? "undefined" : JSON.stringify(v);
 }
 
 async function run() {
-  if (!fs.existsSync(SOURCE_DIR)) {
-    console.error(`Source directory not found: ${SOURCE_DIR}`);
+  if (!fs.existsSync(MANIFEST_PATH)) {
+    console.error(`Manifest not found: ${MANIFEST_PATH}`);
     process.exit(1);
   }
 
   fs.mkdirSync(DEST_DIR, { recursive: true });
 
-  const slugFolders = fs
-    .readdirSync(SOURCE_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name)
-    .sort();
+  // Wipe any old jpgs so removed entries don't linger.
+  for (const f of fs.readdirSync(DEST_DIR)) {
+    if (/\.(jpg|jpeg|png|webp)$/i.test(f)) {
+      fs.unlinkSync(path.join(DEST_DIR, f));
+    }
+  }
 
-  const results: GeneratedImage[] = [];
+  const speciesMap = buildSpeciesMap();
+  const manifest = parseCsv(fs.readFileSync(MANIFEST_PATH, "utf-8"));
 
-  for (const slug of slugFolders) {
-    const folderPath = path.join(SOURCE_DIR, slug);
-    const files = fs.readdirSync(folderPath).filter((f) => /\.(jpg|jpeg|png|webp|avif)$/i.test(f));
+  // Counter per species slug to disambiguate duplicates: e.g. lion-1, lion-2…
+  const counters = new Map<string, number>();
 
-    if (files.length === 0) {
-      console.warn(`  [skip] ${slug} — no image files found`);
+  const generated: GeneratedImage[] = [];
+  const metadata: MetadataEntry[] = [];
+
+  for (const row of manifest) {
+    const original = row.originals[0];
+    if (!original || !fs.existsSync(original)) {
+      console.warn(`  [skip] missing original: ${original}`);
       continue;
     }
 
-    const srcFile = path.join(folderPath, files[0]!);
+    const { slugBase, enLabel } = canonicalSpecies(row.common_name, row.scientific_name);
+    const n = (counters.get(slugBase) ?? 0) + 1;
+    counters.set(slugBase, n);
+    const slug = `${slugBase}-${String(n).padStart(2, "0")}`;
+
     const destFile = path.join(DEST_DIR, `${slug}.jpg`);
 
-    // Copy file
-    fs.copyFileSync(srcFile, destFile);
-    console.log(`  [copy] ${slug}`);
+    // Resize + recompress for web. EXIF kept so camera/lens/date still read.
+    await sharp(original)
+      .rotate() // honor EXIF orientation
+      .resize({
+        width: MAX_LONG_EDGE,
+        height: MAX_LONG_EDGE,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
+      .withMetadata()
+      .toFile(destFile);
 
-    // Get dimensions + blur via plaiceholder
     const buffer = fs.readFileSync(destFile);
-    const { base64, metadata } = await getPlaiceholder(buffer, { size: 10 });
+    const { base64, metadata: dim } = await getPlaiceholder(buffer, { size: 10 });
+    const exif = await readExif(buffer);
 
-    results.push({
+    generated.push({
       slug,
       src: `/images/photos/wildlife/${slug}.jpg`,
-      width: metadata.width ?? 1200,
-      height: metadata.height ?? 800,
+      width: dim.width ?? 1200,
+      height: dim.height ?? 800,
       blurDataURL: base64,
+      ...exif,
     });
+
+    const noName = lookupNorwegian(row.common_name, speciesMap);
+    const enName = enLabel;
+    const fallbackDate = exif.capturedAt ?? "2024-01-01";
+
+    metadata.push({
+      slug,
+      collection: "wildlife",
+      title: { no: capitalize(noName), en: enName },
+      latinName: row.scientific_name,
+      location: { no: "", en: "" },
+      date: fallbackDate,
+      alt: {
+        no: `${capitalize(noName)} i naturen`,
+        en: `${enName} in the wild`,
+      },
+      featuredOnHome: false,
+      availableAsPrint: false,
+      metadataStatus: "placeholder",
+      confidence: row.confidence,
+    });
+
+    console.log(`  [ok] ${slug}  (${row.common_name} · ${row.confidence})`);
   }
 
-  // Write generated file
-  const lines = [
+  // Mark a curated set as featured: first photo per top species, capped at 6.
+  const featuredSlugs = new Set<string>();
+  const seenSpecies = new Set<string>();
+  for (const m of metadata) {
+    const base = m.slug.replace(/-\d+$/, "");
+    if (m.confidence !== "high") continue;
+    if (seenSpecies.has(base)) continue;
+    seenSpecies.add(base);
+    featuredSlugs.add(m.slug);
+    if (featuredSlugs.size >= 6) break;
+  }
+  for (const m of metadata) {
+    if (featuredSlugs.has(m.slug)) m.featuredOnHome = true;
+  }
+
+  // ----- Write images.generated.ts -----
+  const genLines = [
     "// AUTO-GENERATED by scripts/importPhotos.ts — do not edit manually",
     "// Re-run: npm run import-photos",
     "",
@@ -84,19 +333,73 @@ async function run() {
     "  width: number;",
     "  height: number;",
     "  blurDataURL: string;",
+    "  camera?: string;",
+    "  lens?: string;",
+    "  capturedAt?: string;",
     "}",
     "",
     "export const generatedImages: GeneratedImageData[] = [",
-    ...results.map(
+    ...generated.map(
       (r) =>
-        `  { slug: "${r.slug}", src: "${r.src}", width: ${r.width}, height: ${r.height}, blurDataURL: "${r.blurDataURL}" },`,
+        `  { slug: ${jsonString(r.slug)}, src: ${jsonString(r.src)}, width: ${r.width}, height: ${r.height}, blurDataURL: ${jsonString(r.blurDataURL)}, camera: ${escapeForTs(r.camera)}, lens: ${escapeForTs(r.lens)}, capturedAt: ${escapeForTs(r.capturedAt)} },`,
     ),
     "];",
     "",
   ];
+  fs.writeFileSync(OUT_GENERATED, genLines.join("\n"), "utf-8");
 
-  fs.writeFileSync(OUTPUT_FILE, lines.join("\n"), "utf-8");
-  console.log(`\nWrote ${results.length} images to ${OUTPUT_FILE}`);
+  // ----- Write images.metadata.ts -----
+  const metaLines = [
+    "/**",
+    " * images.metadata.ts",
+    " *",
+    " * AUTO-GENERATED from ~/Desktop/wildlife-id/work/manifest.csv via scripts/importPhotos.ts.",
+    " * Hand-edits to title/location can be made here, but will be overwritten if the importer is re-run.",
+    " * Re-run: npm run import-photos",
+    " */",
+    "",
+    `import type { CollectionId, LocalizedString } from "@/types/content";`,
+    "",
+    "export interface PhotoMetadata {",
+    "  slug: string;",
+    "  collection: CollectionId;",
+    "  title: LocalizedString;",
+    "  latinName?: string;",
+    "  location: LocalizedString;",
+    "  date: string;",
+    "  camera?: string;",
+    "  lens?: string;",
+    "  alt: LocalizedString;",
+    "  description?: LocalizedString;",
+    "  featuredOnHome: boolean;",
+    "  availableAsPrint: boolean;",
+    "  printSizes?: string[];",
+    "  wallMockup?: string;",
+    `  metadataStatus?: "placeholder" | "confirmed";`,
+    `  confidence?: "low" | "medium" | "high";`,
+    "}",
+    "",
+    "export const photoMetadata: PhotoMetadata[] = [",
+    ...metadata.map(
+      (m) =>
+        `  { slug: ${jsonString(m.slug)}, collection: ${jsonString(m.collection)}, title: { no: ${jsonString(m.title.no)}, en: ${jsonString(m.title.en)} }, latinName: ${jsonString(m.latinName)}, location: { no: ${jsonString(m.location.no)}, en: ${jsonString(m.location.en)} }, date: ${jsonString(m.date)}, alt: { no: ${jsonString(m.alt.no)}, en: ${jsonString(m.alt.en)} }, featuredOnHome: ${m.featuredOnHome}, availableAsPrint: ${m.availableAsPrint}, metadataStatus: ${jsonString(m.metadataStatus)}, confidence: ${jsonString(m.confidence)} },`,
+    ),
+    "];",
+    "",
+  ];
+  fs.writeFileSync(OUT_METADATA, metaLines.join("\n"), "utf-8");
+
+  console.log(`\nWrote ${generated.length} images.`);
+  console.log(`  → ${OUT_GENERATED}`);
+  console.log(`  → ${OUT_METADATA}`);
+  console.log(`Featured on home: ${[...featuredSlugs].join(", ")}`);
 }
 
-run().catch(console.error);
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+run().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

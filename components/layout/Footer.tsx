@@ -12,11 +12,11 @@ export default function Footer() {
       <Container className="py-12 md:py-16">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div>
-            <p className="font-display text-lg font-semibold mb-2">PLKPHOTO</p>
+            <p className="font-display text-2xl font-bold tracking-[0.18em] uppercase mb-2">PLKPHOTO</p>
             <p className="text-sm text-[var(--color-muted)]">{t("tagline")}</p>
           </div>
 
-          <nav className="flex flex-col md:flex-row gap-4 md:gap-8 text-sm" aria-label="Footer navigation">
+          <nav className="flex flex-col md:flex-row gap-4 md:gap-8 font-display text-xs tracking-[0.15em] uppercase" aria-label="Footer navigation">
             <Link href="/portfolio" className="hover:opacity-70 transition-opacity">Portfolio</Link>
             <Link href="/shop" className="hover:opacity-70 transition-opacity">Shop</Link>
             <Link href="/blog" className="hover:opacity-70 transition-opacity">Blog</Link>
@@ -31,7 +31,6 @@ export default function Footer() {
           </p>
 
           <div className="flex items-center gap-4">
-            {/* TODO: Replace with Petter's actual Instagram handle */}
             <a
               href="https://instagram.com/plkphoto"
               target="_blank"
