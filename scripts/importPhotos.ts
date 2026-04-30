@@ -24,6 +24,10 @@ import exifr from "exifr";
 const MAX_LONG_EDGE = 2400;
 const JPEG_QUALITY = 82;
 
+// Perceptual hash threshold (Hamming distance on a 64-bit aHash).
+// 0 = identical, ~5 = visually identical, ~10+ = same scene different frame.
+const PHASH_DUPLICATE_THRESHOLD = 6;
+
 const MANIFEST_PATH = path.join(os.homedir(), "Desktop/wildlife-id/work/manifest.csv");
 const BY_SPECIES_DIR = path.join(os.homedir(), "Desktop/wildlife-id/work/by-species");
 const DEST_DIR = path.resolve(process.cwd(), "public/images/photos/wildlife");
@@ -162,6 +166,40 @@ function formatCamera(make?: string, model?: string): string | undefined {
   return model.trim();
 }
 
+// ---------- Perceptual hash (aHash) ----------
+
+async function perceptualHash(filePath: string): Promise<bigint> {
+  const buf = await sharp(filePath)
+    .rotate()
+    .resize(8, 8, { fit: "fill" })
+    .grayscale()
+    .raw()
+    .toBuffer();
+  let sum = 0;
+  for (let i = 0; i < buf.length; i++) sum += buf[i]!;
+  const avg = sum / buf.length;
+  let h = 0n;
+  for (let i = 0; i < buf.length; i++) {
+    h = (h << 1n) | (buf[i]! >= avg ? 1n : 0n);
+  }
+  return h;
+}
+
+function hammingDistance(a: bigint, b: bigint): number {
+  let x = a ^ b;
+  let d = 0;
+  while (x) {
+    d += Number(x & 1n);
+    x >>= 1n;
+  }
+  return d;
+}
+
+// Strip trailing "-N" before the extension (DxO/Lightroom alt-export pattern).
+function dedupBasename(p: string): string {
+  return path.basename(p).replace(/-\d+(\.[a-z]+)$/i, "$1");
+}
+
 async function readExif(buffer: Buffer): Promise<{
   camera?: string;
   lens?: string;
@@ -235,7 +273,49 @@ async function run() {
   }
 
   const speciesMap = buildSpeciesMap();
-  const manifest = parseCsv(fs.readFileSync(MANIFEST_PATH, "utf-8"));
+  const rawManifest = parseCsv(fs.readFileSync(MANIFEST_PATH, "utf-8"));
+
+  // Pass 1: drop manifest rows whose `originals[0]` collapses to the same
+  // base filename as a previously-seen row (handles `IMG-2.jpg` re-exports).
+  const seenBasenames = new Map<string, number>();
+  const fileDeduped: ManifestRow[] = [];
+  for (const row of rawManifest) {
+    const original = row.originals[0];
+    if (!original) continue;
+    const key = dedupBasename(original);
+    if (seenBasenames.has(key)) {
+      console.log(`  [dedup-name] ${path.basename(original)} drops (matches earlier ${key})`);
+      continue;
+    }
+    seenBasenames.set(key, fileDeduped.length);
+    fileDeduped.push(row);
+  }
+
+  // Pass 2: perceptual-hash dedup so byte-different but visually identical
+  // bursts collapse too. Compare against earlier accepted rows from the same
+  // common_name (limits N²). Distance ≤ threshold → drop.
+  const accepted: { row: ManifestRow; phash: bigint }[] = [];
+  for (const row of fileDeduped) {
+    const original = row.originals[0]!;
+    if (!fs.existsSync(original)) {
+      console.warn(`  [skip] missing original: ${original}`);
+      continue;
+    }
+    const phash = await perceptualHash(original);
+    const dupe = accepted.find(
+      (a) =>
+        a.row.common_name.toLowerCase() === row.common_name.toLowerCase() &&
+        hammingDistance(a.phash, phash) <= PHASH_DUPLICATE_THRESHOLD,
+    );
+    if (dupe) {
+      console.log(
+        `  [dedup-phash] ${path.basename(original)} drops (≈ ${path.basename(dupe.row.originals[0]!)})`,
+      );
+      continue;
+    }
+    accepted.push({ row, phash });
+  }
+  const manifest = accepted.map((a) => a.row);
 
   // Counter per species slug to disambiguate duplicates: e.g. lion-1, lion-2…
   const counters = new Map<string, number>();
