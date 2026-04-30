@@ -134,10 +134,10 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
           <h1
             className={cn(
               "font-display font-bold text-white text-center select-none",
-              "tracking-[0.06em] uppercase leading-[0.9]",
+              "tracking-[0.04em] uppercase leading-[1.05]",
               "drop-shadow-[0_4px_30px_rgba(0,0,0,0.55)]",
             )}
-            style={{ fontSize: "clamp(3.5rem, 14vw, 14rem)" }}
+            style={{ fontSize: "clamp(2rem, 6.5vw, 6rem)" }}
           >
             PLKPHOTO
           </h1>
