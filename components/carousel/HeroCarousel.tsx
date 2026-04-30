@@ -124,9 +124,8 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
         </div>
       ))}
 
-      {/* Darkening overlay so the white logo reads cleanly */}
-      <div className="absolute inset-0 bg-black/35 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none" />
+      {/* Soft bottom-only gradient so the caption stays readable */}
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
 
       {/* Centered white logo */}
       {showLogo && (
