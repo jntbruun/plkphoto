@@ -2,8 +2,14 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import type { PhotoImage, Locale } from "@/types/content";
 import { cn } from "@/lib/utils";
+
+gsap.registerPlugin(useGSAP);
+
+const WORDMARK = "PLKPHOTO".split("");
 
 interface HeroCarouselProps {
   photos: PhotoImage[];
@@ -19,8 +25,49 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [scrollHintVisible, setScrollHintVisible] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const wordmarkRef = useRef<HTMLHeadingElement>(null);
+  const scrollHintRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useGSAP(
+    () => {
+      if (reducedMotion || !wordmarkRef.current) return;
+      const letters = wordmarkRef.current.querySelectorAll<HTMLSpanElement>("[data-letter]");
+      gsap.from(letters, {
+        opacity: 0,
+        y: 14,
+        filter: "blur(8px)",
+        duration: 0.7,
+        stagger: 0.08,
+        ease: "power2.out",
+      });
+    },
+    { scope: wordmarkRef, dependencies: [reducedMotion] },
+  );
+
+  useGSAP(
+    () => {
+      if (reducedMotion || !scrollHintRef.current) return;
+      const arrow = scrollHintRef.current.querySelector("[data-bounce]");
+      if (!arrow) return;
+      gsap.to(arrow, {
+        y: 6,
+        duration: 0.9,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+    },
+    { scope: scrollHintRef, dependencies: [reducedMotion] },
+  );
+
+  useEffect(() => {
+    const onScroll = () => setScrollHintVisible(window.scrollY < 80);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -131,14 +178,20 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
       {showLogo && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-6">
           <h1
+            ref={wordmarkRef}
             className={cn(
-              "font-display font-bold text-white text-center select-none",
-              "tracking-[0.04em] uppercase leading-[1.05]",
+              "font-display italic font-medium text-white/85 text-center select-none",
+              "tracking-[0.16em] uppercase leading-[1.05]",
               "drop-shadow-[0_4px_30px_rgba(0,0,0,0.55)]",
             )}
             style={{ fontSize: "clamp(2rem, 6.5vw, 6rem)" }}
+            aria-label="PLKPHOTO"
           >
-            PLKPHOTO
+            {WORDMARK.map((char, i) => (
+              <span key={i} data-letter className="inline-block" aria-hidden="true">
+                {char}
+              </span>
+            ))}
           </h1>
         </div>
       )}
@@ -219,6 +272,33 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
         >
           {cta} →
         </a>
+      </div>
+
+      {/* Scroll hint */}
+      <div
+        ref={scrollHintRef}
+        className={cn(
+          "absolute left-1/2 -translate-x-1/2 bottom-24 md:bottom-28 flex flex-col items-center gap-2 text-white pointer-events-none transition-opacity duration-500",
+          scrollHintVisible ? "opacity-70" : "opacity-0",
+        )}
+        aria-hidden="true"
+      >
+        <span className="font-display tracking-[0.3em] uppercase text-[10px]">
+          {locale === "no" ? "Bla" : "Scroll"}
+        </span>
+        <svg
+          data-bounce
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 5v14M19 12l-7 7-7-7" />
+        </svg>
       </div>
 
       {/* Dot pagination */}

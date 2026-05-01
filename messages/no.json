@@ -2,7 +2,7 @@
   "nav": {
     "portfolio": "Portfolio",
     "shop": "Shop",
-    "blog": "Blogg",
+    "trips": "Turer",
     "about": "Om Petter",
     "contact": "Kontakt",
     "openMenu": "Åpne meny",
@@ -23,7 +23,7 @@
     "aboutBody": "Petter L. Krogstad fotograferer dyr og natur — fra norske fjell til afrikansk savanne. Hvert bilde er resultat av tålmodighet, stillhet, og lange timer i felt.",
     "aboutCta": "Mer om Petter",
     "portfolioHeading": "Portfolio",
-    "printsHeading": "Order prints",
+    "printsHeading": "Bestill print",
     "printsBody": "Utvalgte bilder tilgjengelige som fine art prints — på arkivpapir, signert og nummerert. Klar til veggen.",
     "printsCta": "Se prints",
     "wallAlt": "Print fra PLK Photo på vegg",
@@ -67,8 +67,8 @@
     "processHeading": "Om print-prosessen",
     "processText": "Alle prints bestilles individuelt og trykkes på Hahnemühle Photo Rag 308g. Levering innen 2–3 uker. Innrammingsservice tilbys på forespørsel."
   },
-  "blog": {
-    "heading": "Blogg",
+  "trips": {
+    "heading": "Turer",
     "readMore": "Les mer",
     "publishedAt": "Publisert"
   },

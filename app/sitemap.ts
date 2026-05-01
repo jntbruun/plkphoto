@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getPhotos } from "@/content/images";
 import { getCollections } from "@/content/collections";
-import { getBlogPosts } from "@/content/blog";
+import { getTrips } from "@/content/trips";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const locales = ["no", "en"] as const;
@@ -14,7 +14,7 @@ function url(path: string, locale: string) {
 export default function sitemap(): MetadataRoute.Sitemap {
   const entries: MetadataRoute.Sitemap = [];
 
-  const staticPaths = ["/", "/portfolio", "/shop", "/blog", "/about", "/contact"];
+  const staticPaths = ["/", "/portfolio", "/shop", "/trips", "/about", "/contact"];
 
   for (const locale of locales) {
     for (const path of staticPaths) {
@@ -29,7 +29,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       });
     }
 
-    // Collection pages
     const collections = getCollections();
     for (const col of collections) {
       entries.push({
@@ -37,7 +36,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
         lastModified: new Date(),
       });
 
-      // Individual image pages
       const photos = getPhotos({ collection: col.id });
       for (const photo of photos) {
         entries.push({
@@ -47,12 +45,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       }
     }
 
-    // Blog posts
-    const posts = getBlogPosts();
-    for (const post of posts) {
+    const trips = getTrips();
+    for (const trip of trips) {
       entries.push({
-        url: url(`/blog/${post.slug}`, locale),
-        lastModified: new Date(post.publishedAt),
+        url: url(`/trips/${trip.slug}`, locale),
+        lastModified: new Date(trip.publishedAt),
       });
     }
   }

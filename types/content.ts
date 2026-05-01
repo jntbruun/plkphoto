@@ -37,7 +37,7 @@ export interface PhotoImage {
   metadataStatus?: "placeholder" | "confirmed";
 }
 
-export interface BlogPost {
+export interface Trip {
   slug: string;
   title: LocalizedString;
   excerpt: LocalizedString;

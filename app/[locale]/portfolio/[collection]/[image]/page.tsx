@@ -105,6 +105,15 @@ export default async function ImagePage({ params }: PageProps) {
               )}
             </p>
 
+            {photo.availableAsPrint && (
+              <Link
+                href={`/contact?print=${photo.slug}`}
+                className="font-display tracking-[0.15em] uppercase inline-block mb-8 px-6 py-3 bg-[var(--color-fg)] text-[var(--color-bg)] text-xs hover:opacity-80 transition-opacity"
+              >
+                {t("requestPrint")} →
+              </Link>
+            )}
+
             <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
               {photo.latinName && (
                 <>
@@ -136,14 +145,6 @@ export default async function ImagePage({ params }: PageProps) {
               <p className="mt-8 text-sm leading-relaxed max-w-md text-[var(--color-muted)]">
                 {photo.description[l]}
               </p>
-            )}
-            {photo.availableAsPrint && (
-              <Link
-                href={`/contact?print=${photo.slug}`}
-                className="font-display tracking-[0.15em] uppercase inline-block mt-8 text-xs border-b border-[var(--color-fg)] pb-0.5 hover:opacity-60 transition-opacity"
-              >
-                {t("requestPrint")} →
-              </Link>
             )}
           </div>
 
