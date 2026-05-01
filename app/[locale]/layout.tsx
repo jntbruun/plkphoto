@@ -1,10 +1,25 @@
 import type { Metadata } from "next";
+import { Oswald, Open_Sans } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { locales } from "@/lib/i18n";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import "../globals.css";
+
+const oswald = Oswald({
+  subsets: ["latin"],
+  variable: "--font-oswald",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
+const openSans = Open_Sans({
+  subsets: ["latin"],
+  variable: "--font-open-sans",
+  display: "swap",
+  weight: ["400", "600"],
+});
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -27,7 +42,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={`${oswald.variable} ${openSans.variable}`}>
       <body>
         <a href="#main-content" className="skip-link">
           {locale === "no" ? "Hopp til innhold" : "Skip to content"}
