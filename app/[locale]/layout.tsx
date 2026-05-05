@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Oswald, Open_Sans } from "next/font/google";
+import { Montserrat, Open_Sans } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { locales } from "@/lib/i18n";
@@ -7,11 +7,11 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import "../globals.css";
 
-const oswald = Oswald({
+const montserrat = Montserrat({
   subsets: ["latin"],
-  variable: "--font-oswald",
+  variable: "--font-montserrat",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 const openSans = Open_Sans({
@@ -42,7 +42,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={`${oswald.variable} ${openSans.variable}`}>
+    <html lang={locale} className={`${montserrat.variable} ${openSans.variable}`}>
       <body>
         <a href="#main-content" className="skip-link">
           {locale === "no" ? "Hopp til innhold" : "Skip to content"}

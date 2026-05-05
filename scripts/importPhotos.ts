@@ -379,7 +379,7 @@ async function run() {
         en: `${enName} in the wild`,
       },
       featuredOnHome: false,
-      availableAsPrint: false,
+      availableAsPrint: true,
       metadataStatus: "placeholder",
       confidence: row.confidence,
     });

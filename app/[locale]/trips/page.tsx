@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { Link } from "@/lib/navigation";
 import Container from "@/components/layout/Container";
-import { getBlogPosts } from "@/content/blog";
+import { getTrips } from "@/content/trips";
 import type { Locale } from "@/types/content";
 
 interface PageProps {
@@ -12,16 +12,16 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "blog" });
+  const t = await getTranslations({ locale, namespace: "trips" });
   return { title: t("heading") };
 }
 
-export default async function BlogPage({ params }: PageProps) {
+export default async function TripsPage({ params }: PageProps) {
   const { locale } = await params;
   const l = locale as Locale;
-  const t = await getTranslations({ locale, namespace: "blog" });
+  const t = await getTranslations({ locale, namespace: "trips" });
 
-  const posts = getBlogPosts();
+  const posts = getTrips();
 
   return (
     <div className="pt-32 md:pt-40 pb-24 md:pb-40">
@@ -32,7 +32,7 @@ export default async function BlogPage({ params }: PageProps) {
 
         {posts.length === 0 ? (
           <p className="text-[var(--color-muted)]">
-            {l === "no" ? "Ingen innlegg enda." : "No posts yet."}
+            {l === "no" ? "Ingen turer enda." : "No trips yet."}
           </p>
         ) : (
           <div className="flex flex-col divide-y divide-[var(--color-line)]">
@@ -43,7 +43,10 @@ export default async function BlogPage({ params }: PageProps) {
               );
               return (
                 <article key={post.slug} className="py-10 md:py-12 first:pt-0">
-                  <Link href={`/blog/${post.slug}`} className="group grid md:grid-cols-[1fr_280px] gap-8 items-start">
+                  <Link
+                    href={`/trips/${post.slug}`}
+                    className="group grid md:grid-cols-[1fr_280px] gap-8 items-start"
+                  >
                     <div>
                       <time
                         dateTime={post.publishedAt}

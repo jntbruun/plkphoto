@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Container from "@/components/layout/Container";
 import { Link } from "@/lib/navigation";
-import { getBlogPost, getBlogPosts } from "@/content/blog";
+import { getTrip, getTrips } from "@/content/trips";
 import type { Locale } from "@/types/content";
 
 interface PageProps {
@@ -12,13 +12,13 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  const posts = getBlogPosts();
+  const posts = getTrips();
   return posts.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, slug } = await params;
-  const post = getBlogPost(slug);
+  const post = getTrip(slug);
   if (!post) return {};
   const l = locale as Locale;
   return {
@@ -28,26 +28,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function BlogPostPage({ params }: PageProps) {
+export default async function TripPage({ params }: PageProps) {
   const { locale, slug } = await params;
   const l = locale as Locale;
-  const t = await getTranslations({ locale, namespace: "blog" });
+  const t = await getTranslations({ locale, namespace: "trips" });
 
-  const post = getBlogPost(slug);
+  const post = getTrip(slug);
   if (!post) notFound();
 
-  // Dynamically import the MDX body
   let MDXContent: React.ComponentType | null = null;
   try {
-    const mod = await import(`@/content/blog/${slug}.${locale}.mdx`);
+    const mod = await import(`../../../../content/trips/${slug}.${locale}.mdx`);
     MDXContent = mod.default;
   } catch {
-    // Fall back to Norwegian if English MDX doesn't exist yet
     try {
-      const mod = await import(`@/content/blog/${slug}.no.mdx`);
+      const mod = await import(`../../../../content/trips/${slug}.no.mdx`);
       MDXContent = mod.default;
-    } catch {
-      // No MDX file found
+    } catch (e) {
+      console.error("MDX import failed", e);
     }
   }
 
@@ -59,10 +57,9 @@ export default async function BlogPostPage({ params }: PageProps) {
   return (
     <div className="pt-32 md:pt-40 pb-24 md:pb-40">
       <Container>
-        {/* Back */}
         <nav className="mb-10">
           <Link
-            href="/blog"
+            href="/trips"
             className="text-sm text-[var(--color-muted)] hover:text-[var(--color-fg)] transition-colors"
           >
             ← {t("heading")}
@@ -78,7 +75,6 @@ export default async function BlogPostPage({ params }: PageProps) {
             {post.title[l]}
           </h1>
 
-          {/* Cover image */}
           <div className="relative aspect-video overflow-hidden mb-10">
             <Image
               src={post.coverImage}
@@ -90,7 +86,6 @@ export default async function BlogPostPage({ params }: PageProps) {
             />
           </div>
 
-          {/* MDX body */}
           {MDXContent ? (
             <div className="prose-content">
               <MDXContent />

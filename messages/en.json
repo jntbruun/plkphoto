@@ -2,7 +2,7 @@
   "nav": {
     "portfolio": "Portfolio",
     "shop": "Shop",
-    "blog": "Blog",
+    "trips": "Trips",
     "about": "About",
     "contact": "Contact",
     "openMenu": "Open menu",
@@ -67,8 +67,8 @@
     "processHeading": "About the print process",
     "processText": "All prints are individually ordered and printed on Hahnemühle Photo Rag 308g. Delivery within 2–3 weeks. Framing service available on request."
   },
-  "blog": {
-    "heading": "Blog",
+  "trips": {
+    "heading": "Trips",
     "readMore": "Read more",
     "publishedAt": "Published"
   },

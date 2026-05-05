@@ -4,6 +4,7 @@ import Container from "./Container";
 
 export default function Footer() {
   const t = useTranslations("footer");
+  const navT = useTranslations("nav");
   const commonT = useTranslations("common");
   const year = new Date().getFullYear();
 
@@ -17,11 +18,11 @@ export default function Footer() {
           </div>
 
           <nav className="flex flex-col md:flex-row gap-4 md:gap-8 font-display text-xs tracking-[0.15em] uppercase" aria-label="Footer navigation">
-            <Link href="/portfolio" className="hover:opacity-70 transition-opacity">Portfolio</Link>
-            <Link href="/shop" className="hover:opacity-70 transition-opacity">Shop</Link>
-            <Link href="/blog" className="hover:opacity-70 transition-opacity">Blog</Link>
-            <Link href="/about" className="hover:opacity-70 transition-opacity">About</Link>
-            <Link href="/contact" className="hover:opacity-70 transition-opacity">Contact</Link>
+            <Link href="/portfolio" className="hover:opacity-70 transition-opacity">{navT("portfolio")}</Link>
+            <Link href="/shop" className="hover:opacity-70 transition-opacity">{navT("shop")}</Link>
+            <Link href="/trips" className="hover:opacity-70 transition-opacity">{navT("trips")}</Link>
+            <Link href="/about" className="hover:opacity-70 transition-opacity">{navT("about")}</Link>
+            <Link href="/contact" className="hover:opacity-70 transition-opacity">{navT("contact")}</Link>
           </nav>
         </div>
 

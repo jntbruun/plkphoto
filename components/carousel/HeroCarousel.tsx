@@ -2,8 +2,14 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import type { PhotoImage, Locale } from "@/types/content";
 import { cn } from "@/lib/utils";
+
+gsap.registerPlugin(useGSAP);
+
+const WORDMARK = "PLKPHOTO".split("");
 
 interface HeroCarouselProps {
   photos: PhotoImage[];
@@ -19,8 +25,50 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [scrollHintVisible, setScrollHintVisible] = useState(true);
+  const [edgeHover, setEdgeHover] = useState<"left" | "right" | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const wordmarkRef = useRef<HTMLHeadingElement>(null);
+  const scrollHintRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useGSAP(
+    () => {
+      if (reducedMotion || !wordmarkRef.current) return;
+      const letters = wordmarkRef.current.querySelectorAll<HTMLSpanElement>("[data-letter]");
+      gsap.from(letters, {
+        opacity: 0,
+        y: 14,
+        filter: "blur(8px)",
+        duration: 0.7,
+        stagger: 0.08,
+        ease: "power2.out",
+      });
+    },
+    { scope: wordmarkRef, dependencies: [reducedMotion] },
+  );
+
+  useGSAP(
+    () => {
+      if (reducedMotion || !scrollHintRef.current) return;
+      const arrow = scrollHintRef.current.querySelector("[data-bounce]");
+      if (!arrow) return;
+      gsap.to(arrow, {
+        y: 6,
+        duration: 0.9,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+    },
+    { scope: scrollHintRef, dependencies: [reducedMotion] },
+  );
+
+  useEffect(() => {
+    const onScroll = () => setScrollHintVisible(window.scrollY < 80);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -96,7 +144,18 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
       aria-roledescription="carousel"
       aria-label={locale === "no" ? "Utvalgte bilder" : "Featured images"}
       onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onMouseLeave={() => {
+        setPaused(false);
+        setEdgeHover(null);
+      }}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const w = rect.width;
+        if (x < w * 0.3) setEdgeHover("left");
+        else if (x > w * 0.7) setEdgeHover("right");
+        else setEdgeHover(null);
+      }}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
       tabIndex={0}
@@ -131,14 +190,20 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
       {showLogo && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-6">
           <h1
+            ref={wordmarkRef}
             className={cn(
-              "font-display font-bold text-white text-center select-none",
-              "tracking-[0.04em] uppercase leading-[1.05]",
+              "font-display italic font-black text-white/85 text-center select-none",
+              "tracking-[0.16em] uppercase leading-[1.05]",
               "drop-shadow-[0_4px_30px_rgba(0,0,0,0.55)]",
             )}
             style={{ fontSize: "clamp(2rem, 6.5vw, 6rem)" }}
+            aria-label="PLKPHOTO"
           >
-            PLKPHOTO
+            {WORDMARK.map((char, i) => (
+              <span key={i} data-letter className="inline-block" aria-hidden="true">
+                {char}
+              </span>
+            ))}
           </h1>
         </div>
       )}
@@ -150,7 +215,10 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
             type="button"
             onClick={prev}
             aria-label={arrowLabelPrev}
-            className="group absolute top-1/2 left-3 md:left-6 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 md:w-14 md:h-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/55 text-white transition-colors"
+            className={cn(
+              "group absolute top-1/2 left-3 md:left-6 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 md:w-14 md:h-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/55 text-white transition-opacity duration-300",
+              edgeHover === "left" ? "opacity-100" : "opacity-0",
+            )}
           >
             <svg
               width="20"
@@ -170,7 +238,10 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
             type="button"
             onClick={next}
             aria-label={arrowLabelNext}
-            className="group absolute top-1/2 right-3 md:right-6 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 md:w-14 md:h-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/55 text-white transition-colors"
+            className={cn(
+              "group absolute top-1/2 right-3 md:right-6 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 md:w-14 md:h-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/55 text-white transition-opacity duration-300",
+              edgeHover === "right" ? "opacity-100" : "opacity-0",
+            )}
           >
             <svg
               width="20"
@@ -219,6 +290,30 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
         >
           {cta} →
         </a>
+      </div>
+
+      {/* Scroll hint */}
+      <div
+        ref={scrollHintRef}
+        className={cn(
+          "absolute left-1/2 -translate-x-1/2 bottom-3 md:bottom-4 flex items-center justify-center text-white pointer-events-none transition-opacity duration-500",
+          scrollHintVisible ? "opacity-60" : "opacity-0",
+        )}
+        aria-hidden="true"
+      >
+        <svg
+          data-bounce
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 5v14M19 12l-7 7-7-7" />
+        </svg>
       </div>
 
       {/* Dot pagination */}
