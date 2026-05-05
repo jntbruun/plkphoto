@@ -26,6 +26,7 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [scrollHintVisible, setScrollHintVisible] = useState(true);
+  const [edgeHover, setEdgeHover] = useState<"left" | "right" | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const wordmarkRef = useRef<HTMLHeadingElement>(null);
   const scrollHintRef = useRef<HTMLDivElement>(null);
@@ -143,7 +144,18 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
       aria-roledescription="carousel"
       aria-label={locale === "no" ? "Utvalgte bilder" : "Featured images"}
       onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onMouseLeave={() => {
+        setPaused(false);
+        setEdgeHover(null);
+      }}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const w = rect.width;
+        if (x < w * 0.3) setEdgeHover("left");
+        else if (x > w * 0.7) setEdgeHover("right");
+        else setEdgeHover(null);
+      }}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
       tabIndex={0}
@@ -180,7 +192,7 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
           <h1
             ref={wordmarkRef}
             className={cn(
-              "font-display italic font-medium text-white/85 text-center select-none",
+              "font-display italic font-black text-white/85 text-center select-none",
               "tracking-[0.16em] uppercase leading-[1.05]",
               "drop-shadow-[0_4px_30px_rgba(0,0,0,0.55)]",
             )}
@@ -203,7 +215,10 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
             type="button"
             onClick={prev}
             aria-label={arrowLabelPrev}
-            className="group absolute top-1/2 left-3 md:left-6 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 md:w-14 md:h-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/55 text-white transition-colors"
+            className={cn(
+              "group absolute top-1/2 left-3 md:left-6 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 md:w-14 md:h-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/55 text-white transition-opacity duration-300",
+              edgeHover === "left" ? "opacity-100" : "opacity-0",
+            )}
           >
             <svg
               width="20"
@@ -223,7 +238,10 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
             type="button"
             onClick={next}
             aria-label={arrowLabelNext}
-            className="group absolute top-1/2 right-3 md:right-6 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 md:w-14 md:h-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/55 text-white transition-colors"
+            className={cn(
+              "group absolute top-1/2 right-3 md:right-6 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 md:w-14 md:h-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/55 text-white transition-opacity duration-300",
+              edgeHover === "right" ? "opacity-100" : "opacity-0",
+            )}
           >
             <svg
               width="20"
@@ -278,14 +296,11 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
       <div
         ref={scrollHintRef}
         className={cn(
-          "absolute left-1/2 -translate-x-1/2 bottom-24 md:bottom-28 flex flex-col items-center gap-2 text-white pointer-events-none transition-opacity duration-500",
-          scrollHintVisible ? "opacity-70" : "opacity-0",
+          "absolute left-1/2 -translate-x-1/2 bottom-3 md:bottom-4 flex items-center justify-center text-white pointer-events-none transition-opacity duration-500",
+          scrollHintVisible ? "opacity-60" : "opacity-0",
         )}
         aria-hidden="true"
       >
-        <span className="font-display tracking-[0.3em] uppercase text-[10px]">
-          {locale === "no" ? "Bla" : "Scroll"}
-        </span>
         <svg
           data-bounce
           width="14"
