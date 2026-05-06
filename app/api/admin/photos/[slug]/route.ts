@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSession } from "@/lib/admin/auth";
-import { commitFiles } from "@/lib/admin/github";
-import {
-  PATHS,
-  deletePhoto,
-  readCurrentState,
-  updatePhoto,
-} from "@/lib/admin/metadata-writer";
+import { getCurrentAdmin } from "@/lib/admin/auth";
+import { deletePhoto, updatePhoto } from "@/lib/admin/photos-repo";
 
 export const runtime = "nodejs";
 
@@ -30,10 +24,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const session = await getSession();
-  if (!session.email) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const admin = await getCurrentAdmin();
+  if (!admin) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const { slug } = await params;
   const json = (await req.json().catch(() => null)) as unknown;
   const parsed = PatchSchema.safeParse(json);
@@ -44,49 +37,19 @@ export async function PATCH(
     );
   }
 
-  const state = await readCurrentState();
-  const changes = updatePhoto(state, slug, parsed.data);
-
-  const commit = await commitFiles({
-    message: `Update photo: ${slug}`,
-    files: [
-      { path: PATHS.generated, content: changes.generatedJson },
-      { path: PATHS.metadata, content: changes.metadataJson },
-    ],
-  });
-
-  return NextResponse.json({ slug, commit });
+  await updatePhoto(slug, parsed.data);
+  return NextResponse.json({ slug });
 }
 
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const session = await getSession();
-  if (!session.email) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const admin = await getCurrentAdmin();
+  if (!admin) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const { slug } = await params;
-
-  const state = await readCurrentState();
-  const photo = state.metadata.find((m) => m.slug === slug);
-  if (!photo) {
-    return NextResponse.json({ error: "not found" }, { status: 404 });
-  }
-
-  const changes = deletePhoto(state, slug);
-
-  const commit = await commitFiles({
-    message: `Delete photo: ${slug}`,
-    files: [
-      {
-        path: `public/images/photos/${photo.collection}/${slug}.jpg`,
-        content: null,
-      },
-      { path: PATHS.generated, content: changes.generatedJson },
-      { path: PATHS.metadata, content: changes.metadataJson },
-    ],
-  });
-
-  return NextResponse.json({ slug, commit });
+  const result = await deletePhoto(slug);
+  if (!result) return NextResponse.json({ error: "not found" }, { status: 404 });
+  return NextResponse.json({ slug });
 }

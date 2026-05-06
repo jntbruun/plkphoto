@@ -21,7 +21,7 @@ export default async function ShopPage({ params }: PageProps) {
   const l = locale as Locale;
   const t = await getTranslations({ locale, namespace: "shop" });
 
-  const prints = getPrintablePhotos();
+  const prints = await getPrintablePhotos();
 
   return (
     <div className="pt-32 md:pt-40 pb-24 md:pb-40">

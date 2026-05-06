@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getSession } from "@/lib/admin/auth";
+import { getCurrentAdmin } from "@/lib/admin/auth";
 import { getPhoto } from "@/content/images";
 import { EditForm } from "./EditForm";
 
@@ -10,11 +10,11 @@ interface PageProps {
 }
 
 export default async function EditPhotoPage({ params }: PageProps) {
-  const session = await getSession();
-  if (!session.email) redirect("/admin/login");
+  const admin = await getCurrentAdmin();
+  if (!admin) redirect("/admin/login");
 
   const { slug } = await params;
-  const photo = getPhoto(slug);
+  const photo = await getPhoto(slug);
   if (!photo) notFound();
 
   return (

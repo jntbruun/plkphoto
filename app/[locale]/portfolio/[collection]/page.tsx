@@ -36,7 +36,7 @@ export default async function CollectionPage({ params }: PageProps) {
   const collection = getCollection(collectionSlug);
   if (!collection) notFound();
 
-  const photos = getPhotos({ collection: collectionSlug as CollectionId });
+  const photos = await getPhotos({ collection: collectionSlug as CollectionId });
 
   return (
     <div className="pt-32 md:pt-40 pb-24 md:pb-40">

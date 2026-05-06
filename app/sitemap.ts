@@ -11,7 +11,7 @@ function url(path: string, locale: string) {
   return `${BASE_URL}${prefix}${path}`;
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [];
 
   const staticPaths = ["/", "/portfolio", "/shop", "/trips", "/about", "/contact"];
@@ -36,7 +36,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         lastModified: new Date(),
       });
 
-      const photos = getPhotos({ collection: col.id });
+      const photos = await getPhotos({ collection: col.id });
       for (const photo of photos) {
         entries.push({
           url: url(`/portfolio/${col.id}/${photo.slug}`, locale),

@@ -21,6 +21,11 @@ export default async function PortfolioPage({ params }: PageProps) {
   const { locale } = await params;
   const l = locale as Locale;
   const collections = getCollections();
+  const photoCountsByCollection = Object.fromEntries(
+    await Promise.all(
+      collections.map(async (c) => [c.id, (await getPhotos({ collection: c.id })).length] as const),
+    ),
+  ) as Record<string, number>;
 
   return (
     <div className="pt-32 md:pt-40 pb-24 md:pb-40">
@@ -29,7 +34,7 @@ export default async function PortfolioPage({ params }: PageProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {collections.map((collection) => {
-            const photoCount = getPhotos({ collection: collection.id }).length;
+            const photoCount = photoCountsByCollection[collection.id] ?? 0;
             return (
               <CollectionCard
                 key={collection.id}

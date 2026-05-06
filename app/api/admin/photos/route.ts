@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSession } from "@/lib/admin/auth";
+import { getCurrentAdmin } from "@/lib/admin/auth";
 import { processUpload } from "@/lib/admin/image-pipeline";
 import { canonicalSpecies, nextSlug } from "@/lib/admin/slug";
-import { commitFiles } from "@/lib/admin/github";
 import {
-  PATHS,
-  addPhoto,
-  existingSlugs,
-  readCurrentState,
-} from "@/lib/admin/metadata-writer";
-import type { GeneratedImageData } from "@/content/images.generated";
-import type { PhotoMetadata } from "@/content/images.metadata";
+  insertPhoto,
+  listExistingSlugs,
+  uploadPhotoBinary,
+  type PhotoInsert,
+} from "@/lib/admin/photos-repo";
 import { getPhotos } from "@/content/images";
 
 const FormSchema = z.object({
@@ -30,19 +27,15 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function GET() {
-  const session = await getSession();
-  if (!session.email) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-  const photos = getPhotos();
+  const admin = await getCurrentAdmin();
+  if (!admin) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const photos = await getPhotos();
   return NextResponse.json({ photos });
 }
 
 export async function POST(req: Request) {
-  const session = await getSession();
-  if (!session.email) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const admin = await getCurrentAdmin();
+  if (!admin) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const form = await req.formData();
   const file = form.get("file");
@@ -73,24 +66,16 @@ export async function POST(req: Request) {
 
   const processed = await processUpload(inputBuffer);
 
-  const state = await readCurrentState();
   const { slugBase } = canonicalSpecies(f.commonNameEn);
-  const slug = nextSlug(slugBase, existingSlugs(state));
+  const slug = nextSlug(slugBase, await listExistingSlugs());
 
   const date = f.date ?? processed.capturedAt ?? new Date().toISOString().slice(0, 10);
+  const storagePath = `${f.collection}/${slug}.jpg`;
 
-  const generated: GeneratedImageData = {
-    slug,
-    src: `/images/photos/${f.collection}/${slug}.jpg`,
-    width: processed.width,
-    height: processed.height,
-    blurDataURL: processed.blurDataURL,
-    camera: processed.camera,
-    lens: processed.lens,
-    capturedAt: processed.capturedAt,
-  };
+  // Storage first; if it fails, we never insert a row pointing at a missing file.
+  await uploadPhotoBinary(storagePath, processed.buffer);
 
-  const metadata: PhotoMetadata = {
+  const insert: PhotoInsert = {
     slug,
     collection: f.collection,
     title: { no: f.commonNameNo, en: f.commonNameEn },
@@ -107,21 +92,13 @@ export async function POST(req: Request) {
     availableAsPrint: f.availableAsPrint,
     metadataStatus: "confirmed",
     confidence: "high",
+    storagePath,
+    width: processed.width,
+    height: processed.height,
+    blurDataURL: processed.blurDataURL,
   };
 
-  const changes = addPhoto(state, generated, metadata);
+  await insertPhoto(insert);
 
-  const commit = await commitFiles({
-    message: `Add photo: ${slug}`,
-    files: [
-      {
-        path: `public/images/photos/${f.collection}/${slug}.jpg`,
-        content: processed.buffer,
-      },
-      { path: PATHS.generated, content: changes.generatedJson },
-      { path: PATHS.metadata, content: changes.metadataJson },
-    ],
-  });
-
-  return NextResponse.json({ slug, commit });
+  return NextResponse.json({ slug });
 }

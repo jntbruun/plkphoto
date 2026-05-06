@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
 
 export function LoginForm() {
   const router = useRouter();
@@ -14,13 +15,18 @@ export function LoginForm() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/auth/request", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
+      const supabase = getSupabaseBrowser();
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+      const { error: err } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${origin}/api/admin/auth/callback`,
+          shouldCreateUser: true,
+        },
       });
-      if (!res.ok) {
-        setError("Noe gikk galt. Prøv igjen.");
+      if (err) {
+        setError("Kunne ikke sende lenke. Prøv igjen.");
         return;
       }
       router.push("/admin/login?sent=1");

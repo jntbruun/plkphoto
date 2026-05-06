@@ -17,7 +17,7 @@ export async function generateStaticParams() {
   const collections: CollectionId[] = ["wildlife", "nature", "other"];
   const paths: { collection: string; image: string }[] = [];
   for (const col of collections) {
-    const photos = getPhotos({ collection: col });
+    const photos = await getPhotos({ collection: col });
     photos.forEach((p) => paths.push({ collection: col, image: p.slug }));
   }
   return paths;
@@ -25,7 +25,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, image: imageSlug } = await params;
-  const photo = getPhoto(imageSlug);
+  const photo = await getPhoto(imageSlug);
   if (!photo) return {};
   const l = locale as Locale;
   return {
@@ -39,11 +39,11 @@ export default async function ImagePage({ params }: PageProps) {
   const l = locale as Locale;
   const t = await getTranslations({ locale, namespace: "portfolio" });
 
-  const photo = getPhoto(imageSlug);
+  const photo = await getPhoto(imageSlug);
   const collection = getCollection(collectionSlug);
   if (!photo || !collection) notFound();
 
-  const collectionPhotos = getPhotos({ collection: collectionSlug as CollectionId });
+  const collectionPhotos = await getPhotos({ collection: collectionSlug as CollectionId });
   const currentIndex = collectionPhotos.findIndex((p) => p.slug === imageSlug);
   const prevPhoto = currentIndex > 0 ? collectionPhotos[currentIndex - 1] : null;
   const nextPhoto = currentIndex < collectionPhotos.length - 1 ? collectionPhotos[currentIndex + 1] : null;

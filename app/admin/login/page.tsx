@@ -32,7 +32,12 @@ export default async function LoginPage({ searchParams }: PageProps) {
         )}
         {error === "missing" && (
           <p className="mt-6 text-sm text-red-600">
-            Token mangler i URL.
+            Manglet kode i URL.
+          </p>
+        )}
+        {error === "forbidden" && (
+          <p className="mt-6 text-sm text-red-600">
+            E-postadressen har ikke admin-tilgang.
           </p>
         )}
       </div>

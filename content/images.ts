@@ -1,51 +1,31 @@
 /**
  * images.ts
  *
- * Merges generated image data (dimensions, blur, EXIF) with human metadata
- * into the final PhotoImage[] used throughout the app.
- *
- * Resolution order for camera/lens/year:
- *   manual override (images.metadata.ts) → EXIF (images.generated.ts) → undefined
+ * Source of truth: the `photos` table in Supabase. These helpers are async and
+ * meant to be called from Server Components, Route Handlers, and other
+ * server-side code.
  */
-
+import "server-only";
 import type { PhotoImage, CollectionId } from "@/types/content";
-import { generatedImages } from "./images.generated";
-import { photoMetadata } from "./images.metadata";
+import {
+  listPhotos,
+  getPhotoBySlug,
+  listFeaturedPhotos,
+  listPrintablePhotos,
+} from "@/lib/admin/photos-repo";
 
-const allImages: PhotoImage[] = photoMetadata
-  .map((meta) => {
-    const gen = generatedImages.find((g) => g.slug === meta.slug);
-    if (!gen) {
-      throw new Error(`Generated data missing for slug: ${meta.slug}. Run npm run import-photos.`);
-    }
-    return {
-      ...meta,
-      src: gen.src,
-      width: gen.width,
-      height: gen.height,
-      blurDataURL: gen.blurDataURL,
-      camera: meta.camera ?? gen.camera,
-      lens: meta.lens ?? gen.lens,
-      date: gen.capturedAt ?? meta.date,
-    };
-  })
-  .sort((a, b) => b.date.localeCompare(a.date));
-
-export function getPhotos(filter?: { collection?: CollectionId }): PhotoImage[] {
-  if (filter?.collection) {
-    return allImages.filter((img) => img.collection === filter.collection);
-  }
-  return allImages;
+export function getPhotos(filter?: { collection?: CollectionId }): Promise<PhotoImage[]> {
+  return listPhotos(filter);
 }
 
-export function getPhoto(slug: string): PhotoImage | null {
-  return allImages.find((img) => img.slug === slug) ?? null;
+export function getPhoto(slug: string): Promise<PhotoImage | null> {
+  return getPhotoBySlug(slug);
 }
 
-export function getFeaturedPhotos(): PhotoImage[] {
-  return allImages.filter((img) => img.featuredOnHome);
+export function getFeaturedPhotos(): Promise<PhotoImage[]> {
+  return listFeaturedPhotos();
 }
 
-export function getPrintablePhotos(): PhotoImage[] {
-  return allImages.filter((img) => img.availableAsPrint);
+export function getPrintablePhotos(): Promise<PhotoImage[]> {
+  return listPrintablePhotos();
 }

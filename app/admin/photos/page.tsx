@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getSession } from "@/lib/admin/auth";
+import { getCurrentAdmin } from "@/lib/admin/auth";
 import { getPhotos } from "@/content/images";
 import { PhotosLibrary } from "./PhotosLibrary";
 
 export default async function PhotosPage() {
-  const session = await getSession();
-  if (!session.email) redirect("/admin/login");
+  const admin = await getCurrentAdmin();
+  if (!admin) redirect("/admin/login");
 
-  const photos = getPhotos();
+  const photos = await getPhotos();
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12">

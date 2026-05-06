@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getSession } from "@/lib/admin/auth";
+import { getCurrentAdmin } from "@/lib/admin/auth";
 import { getPhotos } from "@/content/images";
 import { getTrips } from "@/content/trips";
 import { LogoutButton } from "./LogoutButton";
 
 export default async function AdminDashboard() {
-  const session = await getSession();
-  if (!session.email) redirect("/admin/login");
+  const admin = await getCurrentAdmin();
+  if (!admin) redirect("/admin/login");
 
-  const photoCount = getPhotos().length;
+  const photoCount = (await getPhotos()).length;
   const tripCount = getTrips().length;
 
   return (
@@ -24,7 +24,7 @@ export default async function AdminDashboard() {
           </h1>
         </div>
         <div className="flex items-center gap-4 text-xs">
-          <span className="text-[var(--color-muted)]">{session.email}</span>
+          <span className="text-[var(--color-muted)]">{admin.email}</span>
           <LogoutButton />
         </div>
       </header>
