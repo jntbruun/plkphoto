@@ -13,14 +13,15 @@ interface PageProps {
   params: Promise<{ locale: string; collection: string; image: string }>;
 }
 
+// Photo pages are rendered on-demand and cached for 5 minutes. Avoiding
+// generateStaticParams keeps the build self-sufficient — it doesn't need
+// Supabase to be reachable at build time, and new uploads appear instantly
+// instead of requiring a rebuild.
+export const revalidate = 300;
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-  const collections: CollectionId[] = ["wildlife", "nature", "other"];
-  const paths: { collection: string; image: string }[] = [];
-  for (const col of collections) {
-    const photos = await getPhotos({ collection: col });
-    photos.forEach((p) => paths.push({ collection: col, image: p.slug }));
-  }
-  return paths;
+  return [];
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

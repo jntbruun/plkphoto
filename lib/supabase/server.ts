@@ -1,11 +1,13 @@
 /**
  * Server-side Supabase clients.
  *
- * - `getSupabaseServer()` — uses the user's session cookies. Reads/writes are
- *   subject to RLS. Use when you need to know who is logged in.
+ * - `getSupabaseAnon()` — anonymous, cookie-free. Use for public reads in
+ *   Server Components, generateMetadata, sitemap. Safe to call at build time.
+ * - `getSupabaseServer()` — wires up the user's session cookies. Use when you
+ *   need to know who is logged in. CANNOT be called at build time because
+ *   cookies() requires a request scope.
  * - `getSupabaseAdmin()` — uses the service-role key. Bypasses RLS. Use ONLY
- *   on the server, after you have already authenticated and authorized the
- *   request via getSupabaseServer().
+ *   on the server, after the API layer has authorized the caller.
  */
 import "server-only";
 import { cookies } from "next/headers";
@@ -19,6 +21,13 @@ function publicEnv() {
     throw new Error("NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set");
   }
   return { url, anonKey };
+}
+
+export function getSupabaseAnon() {
+  const { url, anonKey } = publicEnv();
+  return createClient(url, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
 
 export async function getSupabaseServer() {
