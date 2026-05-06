@@ -27,8 +27,13 @@ export default async function HomePage({ params }: PageProps) {
   const t = await getTranslations({ locale, namespace: "home" });
   const collT = await getTranslations({ locale, namespace: "portfolio" });
 
-  const featuredPhotos = getFeaturedPhotos();
+  const featuredPhotos = await getFeaturedPhotos();
   const collections = getCollections();
+  const photoCountsByCollection = Object.fromEntries(
+    await Promise.all(
+      collections.map(async (c) => [c.id, (await getPhotos({ collection: c.id })).length] as const),
+    ),
+  ) as Record<string, number>;
   const localePrefix = locale !== "no" ? `/${locale}` : "";
 
   return (
@@ -81,7 +86,7 @@ export default async function HomePage({ params }: PageProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {collections.map((collection) => {
-              const photoCount = getPhotos({ collection: collection.id }).length;
+              const photoCount = photoCountsByCollection[collection.id] ?? 0;
               const isEmpty = photoCount === 0;
               const content = (
                 <>
