@@ -194,7 +194,6 @@ export default function HeroCarousel({ photos, locale, cta, ctaHref, showLogo = 
             className={cn(
               "font-display italic font-black text-white/85 text-center select-none",
               "tracking-[0.16em] uppercase leading-[1.05]",
-              "drop-shadow-[0_4px_30px_rgba(0,0,0,0.55)]",
             )}
             style={{ fontSize: "clamp(2rem, 6.5vw, 6rem)" }}
             aria-label="PLKPHOTO"
