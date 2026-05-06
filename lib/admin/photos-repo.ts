@@ -4,7 +4,7 @@
  * happen only after the API layer has authenticated the caller as an admin.
  */
 import "server-only";
-import { getSupabaseAdmin, getSupabaseServer, getStoragePublicUrl } from "@/lib/supabase/server";
+import { getSupabaseAdmin, getSupabaseAnon, getStoragePublicUrl } from "@/lib/supabase/server";
 import type { CollectionId, LocalizedString, PhotoImage } from "@/types/content";
 
 export interface PhotoRow {
@@ -65,7 +65,7 @@ function rowToPhoto(row: PhotoRow): PhotoImage {
 export async function listPhotos(filter?: {
   collection?: CollectionId;
 }): Promise<PhotoImage[]> {
-  const supabase = await getSupabaseServer();
+  const supabase = getSupabaseAnon();
   let q = supabase.from("photos").select("*").order("date", { ascending: false });
   if (filter?.collection) q = q.eq("collection", filter.collection);
   const { data, error } = await q;
@@ -74,7 +74,7 @@ export async function listPhotos(filter?: {
 }
 
 export async function getPhotoBySlug(slug: string): Promise<PhotoImage | null> {
-  const supabase = await getSupabaseServer();
+  const supabase = getSupabaseAnon();
   const { data, error } = await supabase
     .from("photos")
     .select("*")
@@ -85,7 +85,7 @@ export async function getPhotoBySlug(slug: string): Promise<PhotoImage | null> {
 }
 
 export async function listFeaturedPhotos(): Promise<PhotoImage[]> {
-  const supabase = await getSupabaseServer();
+  const supabase = getSupabaseAnon();
   const { data, error } = await supabase
     .from("photos")
     .select("*")
@@ -96,7 +96,7 @@ export async function listFeaturedPhotos(): Promise<PhotoImage[]> {
 }
 
 export async function listPrintablePhotos(): Promise<PhotoImage[]> {
-  const supabase = await getSupabaseServer();
+  const supabase = getSupabaseAnon();
   const { data, error } = await supabase
     .from("photos")
     .select("*")
