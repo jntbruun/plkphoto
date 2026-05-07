@@ -15,8 +15,10 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 function publicEnv() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Trim defensively — env-vars pasted in dashboards (Vercel, etc.) sometimes
+  // pick up a leading tab or trailing newline that silently breaks URLs.
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
   if (!url || !anonKey) {
     throw new Error("NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set");
   }
@@ -56,7 +58,7 @@ export async function getSupabaseServer() {
 
 export function getSupabaseAdmin() {
   const { url } = publicEnv();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!serviceRoleKey) {
     throw new Error("SUPABASE_SERVICE_ROLE_KEY must be set on the server");
   }
